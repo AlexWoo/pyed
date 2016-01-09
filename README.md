@@ -76,9 +76,11 @@ events is a socket event manager class storing and processing event over socket
 
 **import:**
 
+use events_select as events
+
 	from pyed.events_select import events_select as events
 
-in future import events_epoll
+use events_epoll as events
 
 	from pyed.events_epoll import events_select as events
 
@@ -87,12 +89,11 @@ in future import events_epoll
 	__init__(self)
 		retrun value: events object
 
-	addevent(self, fd, ev, etype, handler)
+	addevent(self, fd, ev, etype)
 		return value: void
 		fd: socket fd
 		ev: event class instance create by event(sock)
 		etype: set to events.EVENT_READ for adding a read event such as accepting connction or receiving msg; set to events.EVENT_WRITE for adding a write event
-		handler: event handler with one parameter ev
 
 	delevent(self, fd, etype)
 		return value: void
@@ -144,6 +145,40 @@ event offers user timer and socket event apis
 
 	timeout(self)
 		return value: timer trigger time
+
+### tcpclient
+
+**import:**
+
+	from pyed.tcpclient import tcpclient
+
+**API:**
+
+	__init__(self, cliconf)
+		retrun value: tcpclient object
+		srvconf: client config
+
+	connect(self)
+		retrun value: tcpconnection object
+
+**srvconf:**
+
+	tcpclientconf = {
+	    "host": "127.0.0.1",
+	    "port": 8000,
+	    "blocking": 0,
+	    "recvbuf": 8092,
+	    "sendbuf": 8092,
+	    "linger": (0,0),
+	}
+
+	host: the host of server to connect, could be hostname
+	port: the port of server to connect, could be number between 1-65535 or service name such as http
+	blocking: set 0 for blocking, set 1 for non-blocking
+	recvbuf: see tcp opt
+	sendbuf: see tcp opt
+	linger: see tcp opt
+
 
 ### tcpserver
 
@@ -222,7 +257,6 @@ event offers user timer and socket event apis
 
 ## TODO LIST
 
-- epoll under Linux
 - tcpclient support
 - tcpconnection local addr and peer addr
 

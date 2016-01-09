@@ -1,5 +1,8 @@
 from pyed.timers import timers
-from pyed.events_select import events_select as events
+try:
+    from pyed.events_epoll import events_epoll as events
+except:
+    from pyed.events_select import events_select as events
 from time import time
 
 
@@ -20,7 +23,7 @@ class event:
         if 0 == self.__readset:
             evs = events()
             self.__readset = 1
-            evs.addevent(self.__fd, self, events.EVENT_READ, readhandler)
+            evs.addevent(self.__fd, self, events.EVENT_READ)
 
     def del_read(self):
         if 1 == self.__readset:
@@ -33,7 +36,7 @@ class event:
         if 0 == self.__writeset:
             evs = events()
             self.__writeset = 1
-            evs.addevent(self.__fd, self, events.EVENT_WRITE, writehandler)
+            evs.addevent(self.__fd, self, events.EVENT_WRITE)
 
     def del_write(self):
         if 1 == self.__writeset:

@@ -21,7 +21,7 @@ class events_select(object):
         self.__rlist = []
         self.__wlist = []
 
-    def addevent(self, fd, ev, etype, handler):
+    def addevent(self, fd, ev, etype):
         if etype & events_select.EVENT_READ:
             self.__rlist.append(fd)
 

@@ -11,7 +11,6 @@ class tcpconnection(object):
     def __init__(self, sock, srvconf):
         self.__sock = sock
         self.__blocking = srvconf["blocking"]
-        self.__reuseaddr = srvconf["reuseaddr"]
         self.__recvbuf = srvconf["recvbuf"]
         self.__sendbuf = srvconf["sendbuf"]
         self.__linger = pack("ii", srvconf["linger"][0], srvconf["linger"][1])
@@ -64,17 +63,17 @@ class tcpconnection(object):
         return buf
 
     def write(self, buf):
-        self.__writebuffer += buffer
+        self.__writebuffer += buf
         self.__send()
 
     def close(self):
         self.__sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, self.__linger)
-        self.sock.close()
+        self.__sock.close()
 
     def __readhandler(self, ev):
         ret, nread = self.__recv()
         if ret != tcpconnection.ERROR:
-            if nread > 0:
+            if nread > 0 and hasattr(self, '_tcpconnection__recvmsghandler'):
                 self.__recvmsghandler(self)
             elif self.__closed:
                 self.__broken()
@@ -208,4 +207,5 @@ class tcpconnection(object):
             self.__evrlimit.del_timer()
         if self.__evwlimit != None:
             self.__evwlimit.del_timer()
-        self.__brokenhandler(self)
+        if hasattr(self, '_tcpconnection__brokenhandler'):
+            self.__brokenhandler(self)
