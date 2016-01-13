@@ -253,12 +253,10 @@ event offers user timer and socket event apis
 	close(self)
 		return value: void
 
-## CHANGES
-
 ## TODO LIST
 
-- tcpclient support
-- tcpconnection local addr and peer addr
+- HTTP Server support
+- HTTP Client support
 
 ## Author
 
