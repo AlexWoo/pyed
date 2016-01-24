@@ -32,6 +32,9 @@ class tcpconnection(object):
         self.__ev = event(self.__sock)
         self.__ev.add_read(self.__readhandler)
 
+        self.__recvmsghandler = None
+        self.__brokenhandler = None
+
     def set_config(self, conf):
         self.__readlimit = conf["readlimit"]
         if self.__readlimit > 0:
@@ -73,7 +76,7 @@ class tcpconnection(object):
     def __readhandler(self, ev):
         ret, nread = self.__recv()
         if ret != tcpconnection.ERROR:
-            if nread > 0 and hasattr(self, '_tcpconnection__recvmsghandler'):
+            if nread > 0 and self.__recvmsghandler != None:
                 self.__recvmsghandler(self)
             elif self.__closed:
                 self.__broken()
@@ -207,5 +210,5 @@ class tcpconnection(object):
             self.__evrlimit.del_timer()
         if self.__evwlimit != None:
             self.__evwlimit.del_timer()
-        if hasattr(self, '_tcpconnection__brokenhandler'):
+        if self.__brokenhandler != None:
             self.__brokenhandler(self)
