@@ -1,6 +1,7 @@
 from datetime import datetime
 import os
 
+
 class pylog(object):
     LOG_ALL   = 0
     LOG_DEBUG = 0
@@ -35,8 +36,10 @@ class pylog(object):
             return
         log = self.__time() + " [" + pylog.__logstr[level] + "] " + str(os.getpid()) + " " + module + ": " + fmtstr + "\r\n"
         self.__logfile.write(log)
+        self.__logfile.flush()
     
     def reopen(self):
+        self.__logfile.flush()
         self.__logfile.close()
         self.__logfile = self.__open(self.__logpath)
     
