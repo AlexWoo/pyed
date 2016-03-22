@@ -36,4 +36,4 @@ class pysig(object):
     
     def handler(self, signo):
         log = self.pesys.log
-        log.logError("Receive signal %s!!!" % self.__signals[signo][0])
+        log.logError("Pysig", "Receive signal %s!!!" % self.__signals[signo][0])

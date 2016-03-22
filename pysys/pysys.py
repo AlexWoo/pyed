@@ -72,6 +72,7 @@ class pysys(object):
         self.sig = pysig(self) # init signal
         self.proc = pyproc() # init proc
         self.loadconf() # init conf
+        self.log.setloglevel(self.conf.loglevel)
 
     def loadconf(self):
         self.conf = self.loader.load('conf', self.confpath) # init conf

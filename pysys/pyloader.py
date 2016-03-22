@@ -17,7 +17,7 @@ class pyloader(object):
 
         except Exception, e:
             log = self.pesys.log
-            log.logError("Load module %s [path: %s] error: %s!!!" % (name, path, e))
+            log.logError("Pyloader", "Load module %s [path: %s] error: %s!!!" % (name, path, e))
 
         return m
 

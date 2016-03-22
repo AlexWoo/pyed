@@ -3,62 +3,66 @@ import os
 
 
 class pylog(object):
-    LOG_ALL   = 0
-    LOG_DEBUG = 0
-    LOG_INFO  = 1
-    LOG_WARN  = 2
-    LOG_ERROR = 3
-    LOG_FATAL = 4
-    LOG_NONE  = 5
-    __logstr = {
-        LOG_DEBUG: "Debug",
-        LOG_INFO:  "Info ",
-        LOG_WARN:  "Warn ",
-        LOG_ERROR: "Error",
-        LOG_FATAL: "Fatal"
+    _LOG_ALL    = 0
+    _LOG_DEBUG  = 0
+    _LOG_INFO   = 1
+    _LOG_WARN   = 2
+    _LOG_ERROR  = 3
+    _LOG_FATAL  = 4
+    _LOG_NOTICE = 4
+    _LOG_NONE   = 5
+    _logstr = {
+        _LOG_DEBUG:  "Debug ",
+        _LOG_INFO:   "Info  ",
+        _LOG_WARN:   "Warn  ",
+        _LOG_ERROR:  "Error ",
+        _LOG_FATAL:  "Fatal ",
+        _LOG_NOTICE: "Notice"
         }
 
-    def __init__(self, logpath, loglevel=LOG_ERROR):
-        self.__level = loglevel
-        self.__logpath = logpath
-        self.__logfile = self.__open(self.__logpath)
-
-    def __open(self, logpath):
-        logfile = file(logpath, "a+")
-        return logfile
-
-    def __time(self):
-        timenow = datetime.now()
-        return timenow.strftime("%Y-%m-%d %H:%M:%S.")+str(timenow.microsecond/1000)
+    def __init__(self, logpath):
+        self._level = pylog._LOG_ERROR
+        self._logpath = logpath
+        self._logfile = open(logpath, "a+")
     
-    def __log(self, level, module, fmtstr):
-        if level < self.__level:
+    def _log(self, level, module, fmtstr):
+        if level < self._level:
             return
-        log = self.__time() + " [" + pylog.__logstr[level] + "] " + str(os.getpid()) + " " + module + ": " + fmtstr + "\r\n"
-        self.__logfile.write(log)
-        self.__logfile.flush()
-    
+        timenow = datetime.now()
+        self._logfile.write("%s.%03d [%s] %d %s: %s\r\n" %
+                            (timenow.strftime("%Y-%m-%d %H:%M:%S"),
+                            timenow.microsecond/1000,
+                            pylog._logstr[level],
+                            os.getpid(), module, fmtstr))
+        self._logfile.flush()
+
+    def setloglevel(self, loglevel):
+        self._level = loglevel
+
     def reopen(self):
-        self.__logfile.flush()
-        self.__logfile.close()
-        self.__logfile = self.__open(self.__logpath)
+        self._logfile.close()
+        self._logfile = open(self._logpath, "a+")
     
     def logDebug(self, module, fmtinfo, *args):
         fmtstr = fmtinfo % args
-        self.__log(pylog.LOG_DEBUG, module, fmtstr)
+        self._log(pylog._LOG_DEBUG, module, fmtstr)
     
     def logInfo(self, module, fmtinfo, *args):
         fmtstr = fmtinfo % args
-        self.__log(pylog.LOG_INFO, module, fmtstr)
+        self._log(pylog._LOG_INFO, module, fmtstr)
     
     def logWarn(self, module, fmtinfo, *args):
         fmtstr = fmtinfo % args
-        self.__log(pylog.LOG_WARN, module, fmtstr)
+        self._log(pylog._LOG_WARN, module, fmtstr)
     
     def logError(self, module, fmtinfo, *args):
         fmtstr = fmtinfo % args
-        self.__log(pylog.LOG_ERROR, module, fmtstr)
+        self._log(pylog._LOG_ERROR, module, fmtstr)
     
     def logFatal(self, module, fmtinfo, *args):
         fmtstr = fmtinfo % args
-        self.__log(pylog.LOG_FATAL, module, fmtstr)
+        self._log(pylog._LOG_FATAL, module, fmtstr)
+
+    def logNotice(self, module, fmtinfo, *args):
+        fmtstr = fmtinfo % args
+        self._log(pylog._LOG_NOTICE, module, fmtstr)

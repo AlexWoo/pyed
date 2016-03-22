@@ -23,15 +23,18 @@ def sysinit():
 def main():
     pesys = sysinit()
     # can not modify when system running
-    print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!test"
     log = pesys.log
     conf = pesys.conf
     proc = pesys.proc
+    log.logNotice("Master", "Pyed master process starting ...")
     if conf.daemon:
         proc.daemon(log)
+        log.logInfo("Master", "Pyed master process is set background running")
     proc.procowner(conf.user, conf.group, log)
+    proc.writepidfile(pesys.pidpath)
     for i in range(conf.processes):
-        proc.spawn(worker_process, (pesys, i))
+        pid = proc.spawn(worker_process, (pesys, i))
+        log.logInfo("Master", "Pyed master process start sub process %d" % pid)
     master_mainloop(pesys)
 
 if __name__ == '__main__':
