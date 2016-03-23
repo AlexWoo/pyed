@@ -1,5 +1,6 @@
-from multiprocessing import Process
+from multiprocessing import Process, Pipe
 import sys, os, grp, pwd
+from pyevent import event
 
 
 class pyproc(object):
@@ -59,8 +60,14 @@ class pyproc(object):
         f.close()
 
     def spawn(self, target, args):
+        parent_conn, child_conn = Pipe()
+        pesys = args[0]
+        pesys.chanel = child_conn
         p = Process(target=target, args=args)
         p.start()
+        p.chanel = parent_conn
+        p.event = event.event(p.chanel)
+        p.event.add_read(self.recvfromworker)
         self._procs[p.pid] = p
         for key in self._procs.iterkeys():
             print key
@@ -77,3 +84,9 @@ class pyproc(object):
         pid, _ = os.waitpid(-1, os.P_NOWAIT)
         if pid > 0:
             self.respawn(pid)
+
+    def recvfromworker(self, ev):
+        pass
+
+    def sendtoworker(self, buf):
+        pass

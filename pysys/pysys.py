@@ -3,6 +3,11 @@ from pylog import pylog
 from pysig import pysig
 from pyloader import pyloader
 from pyproc import pyproc
+from pyevent.timers import timers
+try:
+    from pyevent.events_epoll import events_epoll as events
+except:
+    from pyevent.events_select import events_select as events
 
 
 class pysys(object):
@@ -70,6 +75,8 @@ class pysys(object):
         self.log = pylog(self.logpath) # init log
         self.loader = pyloader(self) #init pyloader
         self.sig = pysig(self) # init signal
+        self.evs = events()
+        self.tms = timers()
         self.proc = pyproc() # init proc
         self.loadconf() # init conf
         self.log.setloglevel(self.conf.loglevel)
