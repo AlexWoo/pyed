@@ -106,15 +106,15 @@ class pysys(object):
         print "vertag:\t\t", self.vertag
         print "version:\t", self.version
         print "ver:\t\t", self.ver
-    
+
         print "prefix:\t\t", self.prefix
         print "logpath:\t", self.logpath
         print "confpath:\t", self.confpath
         print "binpath:\t", self.binpath
         print "pidpath:\t", self.pidpath
-    
+
         print "testc:\t\t", self.testc
-    
+
         print "quit:\t\t", self.quit
         print "stop:\t\t", self.stop
         print "reopen:\t\t", self.reopen

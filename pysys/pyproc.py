@@ -4,7 +4,7 @@ import sys, os, grp, pwd
 
 class pyproc(object):
     def __init__(self):
-        self.__procs = {}
+        self._procs = {}
 
     def daemon(self, log): # make proc run background
         pid = os.fork()
@@ -13,28 +13,28 @@ class pyproc(object):
             return
         elif pid != 0:
             sys.exit(0)
-    
+
         pid = os.getpid()
-    
+
         if os.setsid() == -1:
             log.logError("Pyproc", "setsid() failed in daemon")
             return
-    
+
         os.umask(0)
-    
+
         fd = os.open("/dev/null", os.O_RDWR)
         if fd == -1:
             log.logError("Pyproc", "open /dev/null failed")
             return
-    
+
         if os.dup2(fd, 0) == -1:
             log.logError("Pyproc", "dup2 stdin failed")
             return
-    
+
         if os.dup2(fd, 1) == -1:
             log.logError("Pyproc", "dup2 stdout failed")
             return
-    
+
         if fd > 2:
             if os.close(fd) == -1:
                 log.logError("Pyproc", "close fd failed")
@@ -61,4 +61,19 @@ class pyproc(object):
     def spawn(self, target, args):
         p = Process(target=target, args=args)
         p.start()
+        self._procs[p.pid] = p
+        for key in self._procs.iterkeys():
+            print key
         return p.pid
+
+    def respawn(self, pid):
+        p = self._procs[pid]
+        target = p._target
+        args = p._args
+        del self._procs[pid]
+        return self.spawn(target, args)
+
+    def wait(self):
+        pid, _ = os.waitpid(-1, os.P_NOWAIT)
+        if pid > 0:
+            self.respawn(pid)

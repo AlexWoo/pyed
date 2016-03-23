@@ -5,7 +5,7 @@ class pysig(object):
     def __init__(self, pysys):
         self.__signals={
             signal.SIGQUIT: ["quit",   self.quit],
-            signal.SIGINT:  ["stop",   self.stop],
+            #signal.SIGINT:  ["stop",   self.stop],
             signal.SIGTERM: ["stop",   self.stop],
             signal.SIGUSR1: ["reopen", self.reopen],
             signal.SIGHUP:  ["reload", self.reload],
@@ -19,21 +19,23 @@ class pysig(object):
         for key, sig in self.__signals.items():
             signal.signal(key, sig[1])
 
-    def quit(self, signo):
+    def quit(self, signo, frame):
         self.pesys.quit = True
 
-    def stop(self, signo):
+    def stop(self, signo, frame):
+        print signo
+        print dir(frame)
         self.pesys.stop = True
 
-    def reopen(self, signo):
+    def reopen(self, signo, frame):
         self.pesys.reopen = True
         
-    def reload(self, signo):
+    def reload(self, signo, frame):
         self.pesys.reload = True
     
-    def wait(self, signo):
+    def wait(self, signo, frame):
         self.pesys.reap = True
     
-    def handler(self, signo):
+    def handler(self, signo, frame):
         log = self.pesys.log
         log.logError("Pysig", "Receive signal %s!!!" % self.__signals[signo][0])
