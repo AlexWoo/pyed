@@ -1,5 +1,5 @@
 import socket, sys
-from pyed.event import event
+from event import event
 
 
 class tcpserver(object):

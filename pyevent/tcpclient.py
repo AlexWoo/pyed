@@ -1,5 +1,5 @@
 import socket, sys
-from pyed.tcpconnection import tcpconnection
+from tcpconnection import tcpconnection
 
 
 class tcpclient(object):

@@ -1,6 +1,6 @@
 import sys, socket, errno
 from struct import pack
-from pyed.event import event
+from event import event
 
 
 class tcpconnection(object):

@@ -1,8 +1,8 @@
-from pyed.timers import timers
+from timers import timers
 try:
-    from pyed.events_epoll import events_epoll as events
+    from pyevent.events_epoll import events_epoll as events
 except:
-    from pyed.events_select import events_select as events
+    from pyevent.events_select import events_select as events
 from time import time
 
 
