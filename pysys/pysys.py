@@ -1,7 +1,10 @@
-import os, sys, argparse, signal
+import os, sys, signal
+
 from pylog import pylog
-from pysig import pysig
+from pyconf import pyconf
 from pyloader import pyloader
+
+from pysig import pysig
 from pyproc import pyproc
 from pyevent.timers import timers
 try:
@@ -11,103 +14,39 @@ except:
 
 
 class pysys(object):
-    def __init__(self, vertag, version, prefix):
-        self.vertag = vertag
+    def __init__(self, version, prefix, confpath):
         self.version = version
-        self.ver = 'pyed/' + self.version
-
         self.prefix = prefix
-        if self.prefix == None or self.prefix == "":
-            self.prefix = "/usr/local/pyed/"
-        if not self.prefix.endswith("/"):
-            self.prefix = self.prefix + "/"
 
-    def parseargs(self):
-        # opt
-        parser = argparse.ArgumentParser(add_help=False)
-        parser.add_argument("-h", "-?", action='help',
-               help=": show this help message and exit")
-        parser.add_argument("-v", action='version', version=self.ver,
-               help=": show version and exit")
-        parser.add_argument("-t", action='store_true', default=False,
-               help=": test configuration and exit")
-        parser.add_argument("-s", metavar="signal",
-               choices=['stop', 'quit', 'reopen', 'reload'],
-               help=": send signal to a master process: stop, quit, reopen, reload")
-        parser.add_argument("-p", metavar="prefix", default=self.prefix, type=str,
-               help=": set prefix path (default: " + self.prefix + ")")
-        parser.add_argument("-c", metavar="filename", type=str,
-               help=": set configuration file (default: " + self.prefix + "conf/pyed.conf)")
-        args = parser.parse_args()
-
-        # test configuration
-        self.testc = args.t
-
-        # send signal
         self.stop = False
         self.quit = False
         self.reopen = False
         self.reload = False
         self.reap = False
 
-        if args.s == "stop": # signal stop
-            self.stop = True
-        elif args.s == "quit": # signal quit
-            self.quit = True
-        elif args.s == "reopen": # signal reopen
-            self.reopen = True
-        elif args.s == "reload": # signal reload
-            self.reload = True
-
-        # path
-        self.prefix = args.p
-        if not self.prefix.endswith("/"):
-            self.prefix = self.prefix + "/"
-        self.logpath = self.prefix + "log/pyed.log"
-        if args.c:
-            self.confpath = args.c
+        if confpath:
+            self.confpath = confpath
         else:
-            self.confpath = self.prefix + "conf/pyed.conf"
-        self.binpath = self.prefix + "bin/pyed"
-        self.pidpath = self.prefix + "pyed.pid"
+            self.confpath = prefix + "conf/pyed.conf"
+        self.logpath = prefix + "log/pyed.log"
+        self.binpath = prefix + "bin/pyed"
+        self.pidpath = prefix + "pyed.pid"
 
-    def initsys(self):
         self.log = pylog(self.logpath) # init log
-        self.loader = pyloader(self) #init pyloader
-        self.sig = pysig(self) # init signal
-        self.evs = events()
-        self.tms = timers()
-        self.proc = pyproc() # init proc
-        self.loadconf() # init conf
+        self.loader = pyloader(self) # init pyloader
+        self.conf = pyconf(self) # init pyconf
+        self.proc = pyproc(self) # init proc
+
+        self.conf.loadconf()
         self.log.setloglevel(self.conf.loglevel)
 
-    def loadconf(self):
-        self.conf = self.loader.load('conf', self.confpath) # init conf
+    def initsys(self):
+        self.sig = pysig(self) # init signal
+        self.evs = events() # init events
+        self.tms = timers() # init timers
 
     def testconf(self):
-        self.loadconf()
-        sys.exit(1)
-
-    def sendsig(self):
-        if self.quit:
-            sig = signal.SIGQUIT
-        elif self.stop:
-            sig = signal.SIGTERM
-        elif self.reopen:
-            sig = signal.SIGUSR1
-        elif self.reload:
-            sig = signal.SIGUSR2
-
-        try:
-            f = open(self.pidpath, "r")
-            line = f.readline()
-            pid = int(line)
-            os.kill(pid, sig)
-            f.close()
-        except Exception, e:
-            print("Error occur when send signal(%d) to pyed master:%s" % (sig, e))
-        finally:
-            sys.exit(1)
+        self.conf.loadconf()
 
     def status(self):
         print "vertag:\t\t", self.vertag

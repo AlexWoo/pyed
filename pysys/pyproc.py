@@ -4,44 +4,38 @@ from pyevent import event
 
 
 class pyproc(object):
-    def __init__(self):
+    def __init__(self, pesys):
         self._procs = {}
+        self.log = pesys.log
+        self.conf = pesys.conf
+        self.pidpath = pesys.pidpath
 
-    def daemon(self, log): # make proc run background
+    def daemon(self): # make proc run background
         pid = os.fork()
         if pid == -1:
-            log.logError("Pyproc", "fork() failed in daemon")
+            self.log.logError("Pyproc", "fork() failed in daemon")
             return
         elif pid != 0:
             sys.exit(0)
 
         pid = os.getpid()
-
-        if os.setsid() == -1:
-            log.logError("Pyproc", "setsid() failed in daemon")
-            return
-
+        os.setsid()
         os.umask(0)
 
         fd = os.open("/dev/null", os.O_RDWR)
         if fd == -1:
-            log.logError("Pyproc", "open /dev/null failed")
+            self.log.logError("Pyproc", "open /dev/null failed")
             return
+        
+        os.dup2(fd, sys.stdin.fileno())
+        os.dup2(fd, sys.stdout.fileno())
+        os.dup2(fd, sys.stderr.fileno())
+        if fd > sys.stderr.fileno():
+            os.close(fd)
 
-        if os.dup2(fd, 0) == -1:
-            log.logError("Pyproc", "dup2 stdin failed")
-            return
-
-        if os.dup2(fd, 1) == -1:
-            log.logError("Pyproc", "dup2 stdout failed")
-            return
-
-        if fd > 2:
-            if os.close(fd) == -1:
-                log.logError("Pyproc", "close fd failed")
-                return
-
-    def procowner(self, user, group, log):
+    def procowner(self):
+        user = self.conf.user
+        group = self.conf.group
         if os.geteuid() == 0: #root
             try:
                 gr = grp.getgrnam(group)
@@ -50,14 +44,17 @@ class pyproc(object):
                 pw = pwd.getpwnam(user)
                 os.setuid(pw.pw_uid)
             except Exception, e:
-                log.logError("Pyproc", "set uid or gid failed: %s" % e)
-                print("set uid or gid failed: %s" % e)
+                self.log.logError("Pyproc", "set uid or gid failed: %s" % e)
                 sys.exit(1)
 
-    def writepidfile(self, pidfile):
-        f = open(pidfile, "w")
-        f.write("%d" % os.getpid())
-        f.close()
+    def pidfile(self):
+        try:
+            f = open(self.pidpath, "w")
+            f.write("%d" % os.getpid())
+            f.close()
+        except Exception, e:
+            self.log.logError("Pyproc", "write pidfile(%s) failed: %s" % (self.pidpath, e))
+            sys.exit(1)
 
     def spawn(self, target, args):
         parent_conn, child_conn = Pipe()

@@ -1,7 +1,7 @@
 class pyloader(object):
     def __init__(self, pysys):
         self.__modules = {}
-        self.pesys = pysys
+        self.log = pysys.log
 
     def load(self, name, path):
         try:
@@ -16,8 +16,7 @@ class pyloader(object):
             m.__class_name__ = name
 
         except Exception, e:
-            log = self.pesys.log
-            log.logError("Pyloader", "Load module %s [path: %s] error: %s!!!" % (name, path, e))
+            self.log.logError("Pyloader", "Load module %s [path: %s] error: %s!!!" % (name, path, e))
 
         return m
 
