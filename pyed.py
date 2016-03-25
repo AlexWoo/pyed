@@ -5,7 +5,8 @@ import pyedsys
 
 # pysys
 from pysys.pysys import pysys
-from worker import worker_process
+from pyevent.event import event
+from pyworker.worker import worker
 
 def parseargs(version, prefix):
     parser = argparse.ArgumentParser(add_help=False)
@@ -45,38 +46,84 @@ def manager_process(pesys, args):
         sendsig(pesys, args.s)
         sys.exit(0)
 
+def worker_process(pesys, i, pchanel, cchanel):
+    pesys.initsys()
+
+    evs = pesys.evs
+    tms = pesys.tms
+
+    pchanel.close()
+    ev = event(evs, tms, cchanel)
+    w = worker(pesys, i, cchanel)
+    ev.add_read(w.mastercmd)
+
+    while 1:
+        t = tms.processtimer()
+        evs.processevent(t)
+        
+        if w.exiting:
+            pass
+            #pesys.chanel.close()
+            #sys.exit(0)
+
+def quittimeout(ev):
+    #print "quittimeout"
+    ev.proc.sendsig(signal.SIGKILL)
+
 def master_mainloop(pesys):
+    pesys.initsys()
+
     log = pesys.log
     proc = pesys.proc
     evs = pesys.evs
     tms = pesys.tms
+    exiting = False
+    t_quit = event(evs, tms)
+
+    proc.addevent()
+
     while 1:
-        log.logError("Master", "Master mainloop in master_mainloop")
-        
-        t = tms.processtimer()
-        evs.processevent(t)
+        if exiting and not proc.checkalive():
+            log.logNotice("Master", "All worker process exited, master exit")
+            sys.exit(0)
 
-        if pesys.stop: # stop right now
+        try:
+            t = tms.processtimer()
+            evs.processevent(t)
+        except:
             pass
 
-        if pesys.quit: # stop process new task and wait for old task process over
-            pass
+        if pesys.stop and not exiting: # stop right now
+            log.logInfo("Master", "master process stop ...")
+            proc.sendcmd("stop")
+            exiting = True
+
+        if pesys.quit and not exiting: # stop process new task and wait for old task process over
+            log.logInfo("Master", "master process quit ...")
+            proc.sendcmd("quit")
+            exiting = True
+            proc.closechanel()
+            t_quit.add_timer(10000, quittimeout)
+            t_quit.proc = proc
 
         if pesys.reopen: # reopen log
-            pass
+            log.logInfo("Master", "master process reopen ...")
+            pesys.reopen = False
+            proc.sendcmd("reopen")
+            log.reopen()
 
         if pesys.reload: # reload config
-            pass
+            pesys.reload = False
+            log.logInfo("Master", "master process reload ...")
+            proc.sendcmd("reload")
 
         if pesys.reap: # deal sig with SIGCHLD
-            proc.wait()
             pesys.reap = False
 
-        proc.wait() # deal sig with SIGCHLD lost
+        proc.wait(exiting) # deal sig with SIGCHLD lost
 
 def master_process(pesys):
     pesys.log.logError("Master", "in master_process")
-    pesys.initsys()
 
     pesys.proc.procowner()
     pesys.proc.pidfile()

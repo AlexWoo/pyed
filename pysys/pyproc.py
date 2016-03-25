@@ -1,6 +1,7 @@
 from multiprocessing import Process, Pipe
 import sys, os, grp, pwd
-from pyevent import event
+
+from pyevent.event import event
 
 
 class pyproc(object):
@@ -9,6 +10,7 @@ class pyproc(object):
         self.log = pesys.log
         self.conf = pesys.conf
         self.pidpath = pesys.pidpath
+        self.pesys = pesys
 
     def daemon(self): # make proc run background
         pid = os.fork()
@@ -58,13 +60,17 @@ class pyproc(object):
 
     def spawn(self, target, args):
         parent_conn, child_conn = Pipe()
-        pesys = args[0]
-        pesys.chanel = child_conn
-        p = Process(target=target, args=args)
+        newargs = list(args)
+        newargs.append(parent_conn)
+        newargs.append(child_conn)
+        p = Process(target=target, args=newargs)
         p.start()
+
+        # close child_conn in master process
+        child_conn.close()
+
         p.chanel = parent_conn
-        p.event = event.event(p.chanel)
-        p.event.add_read(self.recvfromworker)
+        p.hbcount = 0
         self._procs[p.pid] = p
         for key in self._procs.iterkeys():
             print key
@@ -73,17 +79,57 @@ class pyproc(object):
     def respawn(self, pid):
         p = self._procs[pid]
         target = p._target
-        args = p._args
+        args = (p._args[0], p._args[1])
+        p.chanel.close() # close parent_conn when respawn
         del self._procs[pid]
         return self.spawn(target, args)
 
-    def wait(self):
-        pid, _ = os.waitpid(-1, os.P_NOWAIT)
+    def wait(self, exiting):
+        try:
+            pid, _ = os.waitpid(-1, os.P_NOWAIT)
+        except Exception, e:
+            self.log.logError("Pyproc", "waitpid raise error: %s", e)
         if pid > 0:
-            self.respawn(pid)
+            self.log.logInfo("Pyproc", "master process SIGCHLD ...")
+            if exiting:
+                del self._procs[pid]
+            else:
+                self.respawn(pid)
+
+    def checkalive(self):
+        if len(self._procs) > 0:
+            return True
+        else:
+            return False
+
+    def closechanel(self):
+        for p in self._procs.itervalues():
+            p.chanel.close()
+
+    def sendcmd(self, cmd):
+        for p in self._procs.itervalues():
+            p.chanel.send(cmd)
+
+    def sendsig(self, sig):
+        for pid in self._procs.iterkeys()():
+            os.kill(pid, sig)
+
+    def addevent(self, pid=-1):
+        if pid == -1:
+            for p in self._procs.itervalues():
+                p.event = event(self.pesys.evs, self.pesys.tms, p.chanel)
+                p.event.add_read(self.recvfromworker)
+        else:
+            if self._procs.has_key(pid):
+                p = self._procs[pid]
+                p.event = event(self.pesys.evs, self.pesys.tms, p.chanel)
+                p.event.add_read(self.recvfromworker)
+            else:
+                self.log.logError("Pyproc", "pid(%d) not in pyproc" % pid)
 
     def recvfromworker(self, ev):
-        pass
-
-    def sendtoworker(self, buf):
-        pass
+        buf = ev.sock.recv()
+        if len(buf) == 0: # child close chanel, do nothing now TODO
+            print "child close chanel"
+        else:
+            print "Master recv from worker", buf

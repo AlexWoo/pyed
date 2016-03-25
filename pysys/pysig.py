@@ -23,8 +23,6 @@ class pysig(object):
         self.pesys.quit = True
 
     def stop(self, signo, frame):
-        print signo
-        print dir(frame)
         self.pesys.stop = True
 
     def reopen(self, signo, frame):

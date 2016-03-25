@@ -1,5 +1,3 @@
-import os, sys, signal
-
 from pylog import pylog
 from pyconf import pyconf
 from pyloader import pyloader
@@ -66,8 +64,3 @@ class pysys(object):
         print "reopen:\t\t", self.reopen
         print "reload:\t\t", self.reload
         print "reap:\t\t", self.reap
-
-if __name__ == '__main__':
-    sys = pysys(1000000, "1.0.0", "/Users/wujie/Work/Github/pyed/")
-    sys.parseargs()
-    sys.status()

@@ -40,6 +40,7 @@ class pylog(object):
         self._level = loglevel
 
     def reopen(self):
+        self.logInfo("Pylog", "reopen log file")
         self._logfile.close()
         self._logfile = open(self._logpath, "a+")
     
