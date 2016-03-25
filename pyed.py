@@ -1,4 +1,4 @@
-import argparse, sys, os, signal
+import argparse, sys, os, signal, traceback
 
 # sys macro 
 import pyedsys
@@ -38,8 +38,9 @@ def sendsig(pesys, sigstr):
         elif sigstr == "reload":
             os.kill(pid, signal.SIGUSR2)
         f.close()
-    except Exception, e:
-        pesys.log.logError("Manager", "Error occur when send %s to pyed master:%s" % (sigstr, e))
+    except:
+        pesys.log.logError("Manager", "Error occur when send %s to pyed master:%s"
+            % (sigstr, traceback.format_exc()))
 
 def manager_process(pesys, args):
     if args.s:
@@ -49,6 +50,7 @@ def manager_process(pesys, args):
 def worker_process(pesys, i, pchanel, cchanel):
     pesys.initsys()
 
+    log = pesys.log
     evs = pesys.evs
     tms = pesys.tms
 
@@ -58,8 +60,11 @@ def worker_process(pesys, i, pchanel, cchanel):
     ev.add_read(w.mastercmd)
 
     while 1:
-        t = tms.processtimer()
-        evs.processevent(t)
+        try:
+            t = tms.processtimer()
+            evs.processevent(t)
+        except:
+            log.logInfo("Worker", "error occured when event process: %s", traceback.format_exc())
         
         if w.exiting:
             pass
@@ -67,7 +72,7 @@ def worker_process(pesys, i, pchanel, cchanel):
             #sys.exit(0)
 
 def quittimeout(ev):
-    #print "quittimeout"
+    print "quittimeout"
     ev.proc.sendsig(signal.SIGKILL)
 
 def master_mainloop(pesys):
@@ -91,7 +96,7 @@ def master_mainloop(pesys):
             t = tms.processtimer()
             evs.processevent(t)
         except:
-            pass
+            log.logInfo("Master", "error occured when event process: %s", traceback.format_exc())
 
         if pesys.stop and not exiting: # stop right now
             log.logInfo("Master", "master process stop ...")

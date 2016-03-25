@@ -1,5 +1,5 @@
 from multiprocessing import Process, Pipe
-import sys, os, grp, pwd
+import sys, os, grp, pwd, traceback
 
 from pyevent.event import event
 
@@ -45,8 +45,9 @@ class pyproc(object):
                 os.initgroups(user, gr.gr_gid)
                 pw = pwd.getpwnam(user)
                 os.setuid(pw.pw_uid)
-            except Exception, e:
-                self.log.logError("Pyproc", "set uid or gid failed: %s" % e)
+            except:
+                self.log.logError("Pyproc", "set uid or gid failed: %s",
+                    traceback.format_exc())
                 sys.exit(1)
 
     def pidfile(self):
@@ -105,13 +106,14 @@ class pyproc(object):
     def closechanel(self):
         for p in self._procs.itervalues():
             p.chanel.close()
+            p.event.del_read()
 
     def sendcmd(self, cmd):
         for p in self._procs.itervalues():
             p.chanel.send(cmd)
 
     def sendsig(self, sig):
-        for pid in self._procs.iterkeys()():
+        for pid in self._procs.iterkeys():
             os.kill(pid, sig)
 
     def addevent(self, pid=-1):
@@ -128,8 +130,16 @@ class pyproc(object):
                 self.log.logError("Pyproc", "pid(%d) not in pyproc" % pid)
 
     def recvfromworker(self, ev):
-        buf = ev.sock.recv()
+        try: #Pipe in multiprocessing, if peerside close, localside read will raise an EOFError
+            buf = ev.sock.recv()
+        except:
+            ev.del_read()
+            self.log.logError("Pyproc", "error occur when recv from worker: %s",
+                traceback.format_exc())
+            return
+
         if len(buf) == 0: # child close chanel, do nothing now TODO
             print "child close chanel"
+            ev.del_read()
         else:
             print "Master recv from worker", buf
