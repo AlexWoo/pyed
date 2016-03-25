@@ -7,55 +7,57 @@ from time import time
 
 
 class event:
-    def __init__(self, sock=None):
+    def __init__(self, evs, tms, sock=None):
         self.sock = sock
         if sock != None:
-            self.__fd = sock.fileno()
+            self._fd = sock.fileno()
         else:
-            self.__fd = -1
-        self.__timeout = -1
-        self.__timerset = 0
-        self.__readset = 0
-        self.__writeset = 0
+            self._fd = -1
+        self._evs = evs
+        self._tms = tms
+
+        self._timeout = -1
+        self._timerset = 0
+        self._readset = 0
+        self._writeset = 0
+
+        self.readhandler = None
+        self.writehandler = None
+        self.timeouthandler = None
 
     def add_read(self, readhandler):
         self.readhandler = readhandler
-        if 0 == self.__readset:
-            evs = events()
-            self.__readset = 1
-            evs.addevent(self.__fd, self, events.EVENT_READ)
+        if 0 == self._readset:
+            self._readset = 1
+            self._evs.addevent(self._fd, self, events.EVENT_READ)
 
     def del_read(self):
-        if 1 == self.__readset:
-            evs = events()
-            self.__readset = 0
-            evs.delevent(self.__fd, events.EVENT_READ)
+        if 1 == self._readset:
+            self._readset = 0
+            self._evs.delevent(self._fd, events.EVENT_READ)
 
     def add_write(self, writehandler):
         self.writehandler = writehandler
-        if 0 == self.__writeset:
-            evs = events()
-            self.__writeset = 1
-            evs.addevent(self.__fd, self, events.EVENT_WRITE)
+        if 0 == self._writeset:
+            self._writeset = 1
+            self._evs.addevent(self._fd, self, events.EVENT_WRITE)
 
     def del_write(self):
-        if 1 == self.__writeset:
-            evs = events()
-            self.__writeset = 0
-            evs.addevent(self.__fd, events.EVENT_WRITE)
+        if 1 == self._writeset:
+            self._writeset = 0
+            self._evs.addevent(self._fd, events.EVENT_WRITE)
 
     def add_timer(self, timeout, timeouthandler):
-        tms = timers()
-        self.__timeout = time() + timeout / 1000
-        self.__timerset = 1
+        self._timeout = time() + timeout / 1000
+        self._timerset = 1
         self.timeouthandler = timeouthandler
-        tms.addtimer(self, self.__timeout)
+        self._tms.addtimer(self, self._timeout)
 
     def del_timer(self):
-        self.__timerset = 0
+        self._timerset = 0
 
     def timerset(self):
-        return self.__timerset
+        return self._timerset
 
     def timeout(self):
-        return self.__timeout
+        return self._timeout
