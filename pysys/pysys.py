@@ -31,7 +31,7 @@ class pysys(object):
         self.pidpath = prefix + "pyed.pid"
 
         self.log = pylog(self.logpath) # init log
-        self.loader = pyloader(self) # init pyloader
+        self.loader = pyloader(self.log) # init pyloader
         self.conf = pyconf(self) # init pyconf
         self.proc = pyproc(self) # init proc
 

@@ -1,4 +1,5 @@
 import sys, traceback
+from pyslpm import pyslpm
 
 
 class worker(object):
@@ -14,6 +15,7 @@ class worker(object):
             "reload": self.reload,
             "heartbeat": self.heartbeat
         }
+        self.slpm = pyslpm(self.log)
 
     def mastercmd(self, ev):
         try: #Pipe in multiprocessing, if peerside close, localside read will raise an EOFError
