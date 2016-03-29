@@ -1,6 +1,9 @@
 from select import EPOLLIN, EPOLLOUT, EPOLLHUP, EPOLLET, epoll
 
 class events_epoll(object):
+    EVENT_READ = 1
+    EVENT_WRITE = 2
+
     def __init__(self):
         self._ep = epoll()
         self._events = {}

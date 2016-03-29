@@ -4,6 +4,8 @@ from pyslpm import pyslpm
 
 class worker(object):
     def __init__(self, pesys, i, chanel):
+        self.evs = pesys.evs
+        self.tms = pesys.tms
         self.log = pesys.log
         self.idx = i
         self.chanel = chanel
@@ -15,7 +17,7 @@ class worker(object):
             "reload": self.reload,
             "heartbeat": self.heartbeat
         }
-        self.slpm = pyslpm(self.log)
+        self.slpm = pyslpm(self.evs, self.tms, self.log)
 
     def mastercmd(self, ev):
         try: #Pipe in multiprocessing, if peerside close, localside read will raise an EOFError
