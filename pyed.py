@@ -84,7 +84,7 @@ def manager_process(pesys, args):
         sys.exit(0)
 
 def worker_process(pesys, i, pchanel, cchanel):
-    pesys.initsys()
+    pesys.initsys("worker")
 
     log = pesys.log
     evs = pesys.evs
@@ -108,7 +108,7 @@ def worker_process(pesys, i, pchanel, cchanel):
             #sys.exit(0)
 
 def master_mainloop(pesys):
-    pesys.initsys()
+    pesys.initsys("master")
 
     log = pesys.log
     proc = pesys.proc

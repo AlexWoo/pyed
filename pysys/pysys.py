@@ -2,7 +2,8 @@ from pylog import pylog
 from pyconf import pyconf
 from pyloader import pyloader
 
-from pysig import pysig
+from pysig import mastersig
+from pysig import workersig
 from pyproc import pyproc
 from pyevent.timers import timers
 try:
@@ -38,8 +39,11 @@ class pysys(object):
         self.conf.loadconf()
         self.log.setloglevel(self.conf.loglevel)
 
-    def initsys(self):
-        self.sig = pysig(self) # init signal
+    def initsys(self, t):
+        if t == "master":
+            self.sig = mastersig(self)
+        elif t == "worker":
+            self.sig = workersig(self)
         self.evs = events() # init events
         self.tms = timers() # init timers
 
