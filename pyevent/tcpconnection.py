@@ -12,10 +12,23 @@ class tcpconnection(object):
         self._evs = evs
         self._tms = tms
         self._sock = sock
-        self._blocking = srvconf["blocking"]
-        self._recvbuf = srvconf["recvbuf"]
-        self._sendbuf = srvconf["sendbuf"]
-        self._linger = pack("ii", srvconf["linger"][0], srvconf["linger"][1])
+
+        self._blocking = 0
+        if srvconf.has_key("blocking"):
+            self._blocking = srvconf["blocking"]
+
+        self._recvbuf = 8092
+        if srvconf.has_key("recvbuf"):
+            self._recvbuf = srvconf["recvbuf"]
+
+        self._sendbuf = 8092
+        if srvconf.has_key("sendbuf"):
+            self._sendbuf = srvconf["sendbuf"]
+
+        self._linger = pack("ii", 0, 0)
+        if srvconf.has_key("linger"):
+            self._linger = pack("ii", srvconf["linger"][0], srvconf["linger"][1])
+
         self._sock.setblocking(self._blocking)
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._recvbuf)
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._sendbuf)
@@ -72,6 +85,12 @@ class tcpconnection(object):
         self._send()
 
     def close(self):
+        self._ev.del_read()
+        self._ev.del_write()
+        if self._evrlimit != None:
+            self._evrlimit.del_timer()
+        if self._evwlimit != None:
+            self._evwlimit.del_timer()
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, self._linger)
         self._sock.close()
 

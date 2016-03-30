@@ -6,15 +6,9 @@ import pyedsys
 # pysys
 from pysys.pysys import pysys
 from pysys.pycmdserver import cmdserver
+from pysys.pycmdclient import cmdclient
 from pyworker.worker import worker
 from pyevent.event import event
-from pyevent.tcpclient import tcpclient
-from pyevent.tcpserver import tcpserver
-from pyevent.timers import timers
-try:
-    from pyevent.events_epoll import events_epoll as events
-except:
-    from pyevent.events_select import events_select as events
 
 def parseargs(version, prefix):
     parser = argparse.ArgumentParser(add_help=False)
@@ -68,29 +62,18 @@ def cmdresphandler(c):
     c.close()
 
 def managersendcmd(pesys, args):
-    try:
-        evs = events()
-        tms = timers()
-        cliconf={
-            "host":pesys.conf.cmdserver["host"],
-            "port":pesys.conf.cmdserver["port"]
-        }
-        cmd = "test"
-        cmdclient = tcpclient(cliconf, evs, tms)
-        c = cmdclient.connect()
-        c.set_recvmsg(cmdresphandler)
-        c.write(cmd)
-        while 1:
-            try:
-                evs.processevent(60000)
-            except:
-                pesys.log.logError("Manager", "recv cmd response from server[%s:%d] failed: %s"
-                    % (cliconf["host"], cliconf["port"], traceback.format_exc()))
-                sys.exit(0)
-    except:
-        pesys.log.logError("Manager", "send cmd[%s] to server[%s:%d] failed: %s"
-            % (cmd, cliconf["host"], cliconf["port"], traceback.format_exc()))
-        sys.exit(0)
+    cmdcli = cmdclient(pesys)
+    if args.load:
+        cmdcli.sendcmd("load", args.load)
+    elif args.unload:
+        cmdcli.sendcmd("unload", args.unload)
+    elif args.update:
+        cmdcli.sendcmd("update", args.update)
+    elif args.display:
+        cmdcli.sendcmd("display", args.display)
+    else:
+        print("Unsupported cmd")
+    cmdcli.mainloop()
 
 def manager_process(pesys, args):
     if args.s:
@@ -184,8 +167,6 @@ def master_mainloop(pesys):
                 sys.exit(0)
 
 def master_process(pesys):
-    pesys.log.logError("Master", "in master_process")
-
     pesys.proc.procowner()
     pesys.proc.pidfile()
     for i in range(pesys.conf.processes):

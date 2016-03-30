@@ -111,10 +111,7 @@ class pyproc(object):
                 continue
 
     def checkalive(self):
-        if len(self._procs) > 0:
-            return True
-        else:
-            return False
+        return len(self._procs) > 0
 
     def closechanel(self):
         for p in self._procs.itervalues():
@@ -124,6 +121,9 @@ class pyproc(object):
     def sendcmd(self, cmd):
         for p in self._procs.itervalues():
             p.chanel.send(cmd)
+
+    def setcmdserver(self, cmdserver):
+        self.cmdserver = cmdserver
 
     def sendsig(self, sig):
         for pid in self._procs.iterkeys():
@@ -155,4 +155,4 @@ class pyproc(object):
             print "child close chanel"
             ev.del_read()
         else:
-            print "Master recv from worker", buf
+            self.cmdserver.sendresp(buf, True)
