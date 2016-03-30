@@ -11,6 +11,7 @@ class pyproc(object):
         self.conf = pesys.conf
         self.pidpath = pesys.pidpath
         self.pesys = pesys
+        self.cmdcount = 0
 
     def daemon(self): # make proc run background
         pid = os.fork()
@@ -121,6 +122,7 @@ class pyproc(object):
     def sendcmd(self, cmd):
         for p in self._procs.itervalues():
             p.chanel.send(cmd)
+            self.cmdcount += 1
 
     def setcmdserver(self, cmdserver):
         self.cmdserver = cmdserver
@@ -154,5 +156,11 @@ class pyproc(object):
         if len(buf) == 0: # child close chanel, do nothing now TODO
             print "child close chanel"
             ev.del_read()
+        elif buf == None:
+            self.cmdcount -= 1
         else:
-            self.cmdserver.sendresp(buf, True)
+            self.cmdcount -= 1
+            if self.cmdcount:
+                self.cmdserver.sendresp(buf, False)
+            else:
+                self.cmdserver.sendresp(buf, True)

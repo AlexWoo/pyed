@@ -42,7 +42,6 @@ class cmdclient(tcpclient):
         self.ev.add_timer(10000, self.timeouthandler) # refresh response timeout
 
     def brokenhandler(self, c):
-        print("!!!!! Cmdserver close connection")
         sys.exit(0)
 
     def timeouthandler(self, ev):
