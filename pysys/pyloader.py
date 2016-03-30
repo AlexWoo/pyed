@@ -1,3 +1,6 @@
+import traceback
+
+
 class pyloader(object):
     def __init__(self, log):
         self.log = log
@@ -9,8 +12,9 @@ class pyloader(object):
             m = type(name, (object,), tmp)
             m.__class_name__ = name
 
-        except Exception, e:
-            self.log.logError("Pyloader", "Load module %s [path: %s] error: %s!!!" % (name, path, e))
+        except:
+            self.log.logError("Pyloader", "Load module %s [path: %s] error: %s!!!"
+                % (name, path, traceback.format_exc()))
             return None
 
         return m

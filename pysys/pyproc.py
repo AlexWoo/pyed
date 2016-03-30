@@ -1,5 +1,5 @@
 from multiprocessing import Process, Pipe
-import sys, os, grp, pwd, traceback
+import sys, os, grp, pwd, traceback, errno
 
 from pyevent.event import event
 
@@ -86,16 +86,29 @@ class pyproc(object):
         return self.spawn(target, args)
 
     def wait(self, exiting):
-        try:
-            pid, _ = os.waitpid(-1, os.P_NOWAIT)
-        except Exception, e:
-            self.log.logError("Pyproc", "waitpid raise error: %s", e)
-        if pid > 0:
-            self.log.logInfo("Pyproc", "master process SIGCHLD ...")
-            if exiting:
-                del self._procs[pid]
-            else:
-                self.respawn(pid)
+        while 1:
+            try:
+                pid, _ = os.waitpid(-1, os.P_NOWAIT)
+                if pid == 0:
+                    return
+                if pid > 0:
+                    self.log.logInfo("Pyproc", "work(%d) exiting, master process SIGCHLD ...", pid)
+                    if exiting:
+                        del self._procs[pid]
+                        if len(self._procs) == 0:
+                            return
+                    else:
+                        self.respawn(pid)
+            except OSError, e:
+                if e.errno == errno.EINTR:
+                    self.log.logInfo("Pyproc", "master process waitpid interrupt")
+                    continue
+                if e.errno == errno.ECHILD:
+                    self.log.logInfo("Pyproc", "master process has no sub process to wait")
+                    return
+            except:
+                self.log.logError("Pyproc", "waitpid raise error: %s", traceback.format_exc())
+                continue
 
     def checkalive(self):
         if len(self._procs) > 0:

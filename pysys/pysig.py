@@ -2,20 +2,22 @@ import signal
 
 
 class pysig(object):
-    def __init__(self, pysys):
+    def __init__(self, pesys):
         self.__signals={
             signal.SIGQUIT: ["quit",   self.quit],
-            #signal.SIGINT:  ["stop",   self.stop],
+            signal.SIGINT:  ["stop",   self.stop],
             signal.SIGTERM: ["stop",   self.stop],
             signal.SIGUSR1: ["reopen", self.reopen],
             signal.SIGHUP:  ["reload", self.reload],
             signal.SIGUSR2: ["reload", self.reload],
             signal.SIGCHLD: ["wait",   self.wait],
             signal.SIGSYS:  ["sys",    self.handler],
-            signal.SIGPIPE: ["pipe",   self.handler]
+            signal.SIGPIPE: ["pipe",   self.handler],
+            signal.SIGALRM: ["alrm",   self.handler]
         }
 
-        self.pesys = pysys
+        self.pesys = pesys
+        self.log = pesys.log
         for key, sig in self.__signals.items():
             signal.signal(key, sig[1])
 
@@ -35,5 +37,4 @@ class pysig(object):
         self.pesys.reap = True
     
     def handler(self, signo, frame):
-        log = self.pesys.log
-        log.logError("Pysig", "Receive signal %s!!!" % self.__signals[signo][0])
+        self.log.logError("Pysig", "Receive signal %s!!!" % self.__signals[signo][0])
