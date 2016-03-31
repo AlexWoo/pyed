@@ -1,5 +1,6 @@
 import argparse, sys, os, signal, traceback
 
+
 # sys macro 
 import pyedsys
 
@@ -23,15 +24,8 @@ def parseargs(version, prefix):
         help=": set prefix path (default: " + prefix + ")")
     parser.add_argument("-c", metavar="filename", type=str,
         help=": set configuration file (default: " + prefix + "conf/pyed.conf)")
-    parser.add_argument("--load", nargs=2, metavar=('modulename', 'filename'), type=str,
-        help=": load module")
-    parser.add_argument("--unload", metavar='modulename', type=str,
-        help=": unload module")
-    parser.add_argument("--update", nargs=2, metavar=('modulename', 'filename'),
-        type=str, default=None,
-        help=": update module")
-    parser.add_argument("--display", metavar='modulename', default=None,
-        help=": display module")
+    parser.add_argument("-e", nargs="+", metavar=('cmd', 'option'),
+        help=": execute command of pyed")
     args = parser.parse_args()
     return args
 
@@ -63,24 +57,15 @@ def cmdresphandler(c):
 
 def managersendcmd(pesys, args):
     cmdcli = cmdclient(pesys)
-    if args.load:
-        cmdcli.sendcmd("load", args.load)
-    elif args.unload:
-        cmdcli.sendcmd("unload", args.unload)
-    elif args.update:
-        cmdcli.sendcmd("update", args.update)
-    elif args.display:
-        cmdcli.sendcmd("display", args.display)
-    else:
-        print("Unsupported cmd")
+    cmdcli.sendcmd(args[0], args[1:])
     cmdcli.mainloop()
 
 def manager_process(pesys, args):
     if args.s:
         sendsig(pesys, args.s)
         sys.exit(0)
-    elif args.load or args.unload or args.update or args.display:
-        managersendcmd(pesys, args)
+    elif args.e:
+        managersendcmd(pesys, args.e)
         sys.exit(0)
 
 def worker_process(pesys, i, pchanel, cchanel):

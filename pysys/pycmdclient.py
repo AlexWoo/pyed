@@ -28,7 +28,6 @@ class cmdclient(tcpclient):
             self.evs.processevent(t)
 
     def sendcmd(self, cmd, args):
-        print args
         buf = cmd + " "
         for arg in args:
             buf += (arg + " ")

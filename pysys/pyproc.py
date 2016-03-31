@@ -147,14 +147,16 @@ class pyproc(object):
     def recvfromworker(self, ev):
         try: #Pipe in multiprocessing, if peerside close, localside read will raise an EOFError
             buf = ev.sock.recv()
-        except:
+        except EOFError:
             ev.del_read()
+            return
+        except:
             self.log.logError("Pyproc", "error occur when recv from worker: %s",
                 traceback.format_exc())
             return
 
         if buf == None:
-            self.cmdcount -= -1
+            self.cmdcount -= 1
         elif len(buf) == 0: # child close chanel, do nothing now TODO
             print "child close chanel"
             ev.del_read()

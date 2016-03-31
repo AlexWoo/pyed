@@ -16,7 +16,6 @@ class workercmd(object):
     def processcmd(self, ev):
         try: #Pipe in multiprocessing, if peerside close, localside read will raise an EOFError
             cmd = ev.sock.recv()
-            print "Master cmd:", cmd
         except:
             ev.del_read()
             self._log.logError("Worker", "error occur when recv cmd from master: %s",
@@ -28,4 +27,4 @@ class workercmd(object):
             ret = self._cmd[args[0]](*args[1:])
             ev.sock.send(ret)
         else:
-            ev.sock.send("Unknown command[%s]", args[0])
+            ev.sock.send("Unknown command[" + args[0] + "]")

@@ -27,7 +27,7 @@ class cmdserver(tcpserver):
 
     def recvmsg(self, c):
         buf = self.c.read()
-        self.log.logInfo("CmdServer", "Send cmd[%s] to worker", buf)
+        self.log.logInfo("CmdServer", "Send cmd[%s] to worker", buf.strip())
         self.proc.sendcmd(buf)
         self.ev = event(self.evs, self.tms)
         self.ev.add_timer(5000, self.timeouthandler) # set cmd response timeout to 5s
