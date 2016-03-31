@@ -86,26 +86,9 @@ def manager_process(pesys, args):
 def worker_process(pesys, i, pchanel, cchanel):
     pesys.initsys("worker")
 
-    log = pesys.log
-    evs = pesys.evs
-    tms = pesys.tms
-
     pchanel.close()
-    ev = event(evs, tms, cchanel)
     w = worker(pesys, i, cchanel)
-    ev.add_read(w.mastercmd)
-
-    while 1:
-        try:
-            t = tms.processtimer()
-            evs.processevent(t)
-        except:
-            log.logInfo("Worker", "error occured when event process: %s", traceback.format_exc())
-        
-        if w.exiting:
-            pass
-            #pesys.chanel.close()
-            #sys.exit(0)
+    w.mainloop()
 
 def master_mainloop(pesys):
     pesys.initsys("master")
@@ -136,7 +119,6 @@ def master_mainloop(pesys):
             log.logNotice("Master", "master process quit ...")
             proc.sendcmd("quit")
             exiting = True
-            proc.closechanel()
             t_quit.add_timer(10000, quittimeout)
             t_quit.proc = proc
 
@@ -159,6 +141,7 @@ def master_mainloop(pesys):
         if exiting:
             if pesys.quit and not proc.checkalive():
                 log.logNotice("Master", "All worker process exited, master quit")
+                proc.closechanel()
                 os.remove(pesys.pidpath)
                 sys.exit(0)
             if pesys.stop:

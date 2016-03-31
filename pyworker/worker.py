@@ -1,53 +1,48 @@
 import sys, traceback
+
 from pyslpm import pyslpm
+from workercmd import workercmd
 
 
 class worker(object):
     def __init__(self, pesys, i, chanel):
-        self.evs = pesys.evs
-        self.tms = pesys.tms
-        self.log = pesys.log
-        self.idx = i
-        self.chanel = chanel
-        self.exiting = False
-        self._cmds = {
-            "stop": self.stop,
+        self._evs = pesys.evs
+        self._tms = pesys.tms
+        self._log = pesys.log
+        self._idx = i
+
+        cmd = {
             "quit": self.quit,
             "reopen": self.reopen,
-            "reload": self.reload,
-            "heartbeat": self.heartbeat
+            "reload": self.reload
         }
-        self.slpm = pyslpm(self.evs, self.tms, self.log)
+        self._cmd = workercmd(self._log, self._evs, self._tms, chanel)
+        self._cmd.registercmd(cmd)
 
-    def mastercmd(self, ev):
-        try: #Pipe in multiprocessing, if peerside close, localside read will raise an EOFError
-            cmd = ev.sock.recv()
-            print "Master cmd:", cmd
-            ev.sock.send("Test OK")
-        except:
-            ev.del_read()
-            self.log.logError("Worker", "error occur when recv from master: %s",
-                traceback.format_exc())
-            return
-        args = cmd.split()
-        if self._cmds.has_key(args[0]):
-            tuple_args = tuple(args[1:])
-            self._cmds[args[0]](*tuple_args)
-    
-    def stop(self):
-        self.log.logNotice("Worker", "worker process(%d) stop" % self.idx)
-        sys.exit(0)
+        self._exiting = False
+        self._slpm = pyslpm(self._evs, self._tms, self._log)
+
+    def mainloop(self):
+        while 1:
+            try:
+                t = self._tms.processtimer()
+                self._evs.processevent(t)
+            except SystemExit:
+                return
+            except:
+                self._log.logInfo("Worker", "error occured when event process: %s",
+                                  traceback.format_exc())
     
     def quit(self):
-        self.log.logNotice("Worker", "worker process(%d) quit" % self.idx)
-        self.exiting = True
+        if not self._exiting:
+            self._log.logNotice("Worker", "worker process(%d) quit", self._idx)
+            self._exiting = True
+            sys.exit(0)
     
     def reopen(self):
-        self.log.reopen()
+        self._log.logNotice("Worker", "worker process(%d) reopen log", self._idx)
+        self._log.reopen()
     
     def reload(self):
-        self.log.logNotice("Worker", "worker process(%d) reload" % self.idx)
+        self._log.logNotice("Worker", "worker process(%d) reload conf", self._idx)
         # Do nothing now
-        
-    def heartbeat(self):
-        pass

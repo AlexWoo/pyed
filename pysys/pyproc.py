@@ -153,11 +153,11 @@ class pyproc(object):
                 traceback.format_exc())
             return
 
-        if len(buf) == 0: # child close chanel, do nothing now TODO
+        if buf == None:
+            self.cmdcount -= -1
+        elif len(buf) == 0: # child close chanel, do nothing now TODO
             print "child close chanel"
             ev.del_read()
-        elif buf == None:
-            self.cmdcount -= 1
         else:
             self.cmdcount -= 1
             if self.cmdcount:
