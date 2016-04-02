@@ -1,4 +1,4 @@
-import traceback
+import traceback, types
 
 
 class pyloader(object):
@@ -7,14 +7,11 @@ class pyloader(object):
 
     def load(self, name, path):
         try:
-            tmp = {}
-            exec compile(open(path).read(), "", "exec") in tmp
-            m = type(name, (object,), tmp)
-            m.__class_name__ = name
+            m = types.ModuleType(name)
+            exec open(path).read() in m.__dict__
+            return m
 
         except:
-            self.log.logError("Pyloader", "Load module %s [path: %s] error: %s!!!"
-                % (name, path, traceback.format_exc()))
+            self.log.logError("Pyloader", "Load module %s [path: %s] error: %s!!!",
+                              name, path, traceback.format_exc())
             return None
-
-        return m
