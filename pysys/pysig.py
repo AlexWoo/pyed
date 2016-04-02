@@ -6,7 +6,7 @@ class pysig(object):
         self._signals = sigtable
         self.pesys = pesys
         self.log = pesys.log
-        for key, sig in self._signals.items():
+        for key, sig in self._signals.iteritems():
             signal.signal(key, sig[1])
 
     def quit(self, signo, frame):

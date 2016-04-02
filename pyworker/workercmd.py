@@ -24,7 +24,16 @@ class workercmd(object):
     
         args = cmd.split()
         if args[0] in self._cmd:
-            ret = self._cmd[args[0]](*args[1:])
-            ev.sock.send(ret)
+            try:
+                ret = self._cmd[args[0]](*args[1:])
+            except TypeError:
+                ev.sock.send("Number of arguments mismatched")
+            except:
+                self._log.logInfo("Worker", "error occur when execute cmd[%s], %s",
+                                   args[0], traceback.format_exc())
+                ev.sock.send("Execute " + args[0] + " failed")
+                return
+            else:
+                ev.sock.send(ret)
         else:
-            ev.sock.send("Unknown command[" + args[0] + "]")
+            ev.sock.send("Unknown command: " + args[0])

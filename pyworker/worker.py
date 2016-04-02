@@ -1,4 +1,4 @@
-import sys, traceback
+import sys, traceback, time
 
 from pyslpm import pyslpm
 from workercmd import workercmd
@@ -20,13 +20,16 @@ class worker(object):
         self._cmd.registercmd(cmd)
 
         self._exiting = False
-        self._slpm = pyslpm(self._evs, self._tms, self._log)
+        self._slpm = pyslpm(self._log, self._evs, self._tms, self._cmd)
 
     def mainloop(self):
         while 1:
             try:
+                nexttime = self._slpm.runslp()
                 t = self._tms.processtimer()
-                self._evs.processevent(t)
+                interval = (nexttime - time.time()) * 1000
+                if interval < 0: interval = 0
+                self._evs.processevent(min(t, interval))
             except SystemExit:
                 return
             except:

@@ -1,71 +1,106 @@
 import traceback, time
 from pysys.pyloader import pyloader
 from pyslp import pyslp
-from pyevent.event import event
 
 
 class pyslpm(object):
-    def __init__(self, evs, tms, log):
+    def __init__(self, log, evs, tms, cmd):
         self._slps = {}
-        self._timeout = {}
-        self.log = log
-        self.ev = event(evs, tms)
-        self.loader = pyloader(log)
+        self._stop = []
+        self._log = log
+        self._loader = pyloader(log)
+        slpmcmd = {
+            "load": self.load,
+            "unload": self.unload,
+            "update": self.update,
+            "display": self.display,
+            "delete": self.delete
+        }
+        cmd.registercmd(slpmcmd)
 
-    def loadslp(self, modulename, filepath):
-        m = self.loader.load(modulename, filepath)
+    def _stopslp(self, modulename):
+        slp = self._slps[modulename]
+        slp.stop = True
+        del self._slps[modulename]
+        self._stop.append(slp)
+
+    def _checkstop(self):
+        self._stop = [slp for slp in self._stop if not slp.exited]
+
+    def load(self, modulename, filepath):
+        m = self._loader.load(modulename, filepath)
         if m == None:
-            self.log.logError("Pyslpm", "compile module[%s:%s] failed: %s"
-                % (filepath, modulename, traceback.format_exc()))
-            return
+            self._log.logError("Pyslpm", "Compile module[%s:%s] failed: %s"
+                % (modulename, filepath, traceback.format_exc()))
+            return "Compile module[" + modulename + ", " + filepath + "] failed"
         try: # load module in slp
-            slp = pyslp(self.log, self.loader, m)
+            slp = pyslp(self._log, self._loader, m)
         except:
-            self.log.logError("Pyslpm", "load module[%s:%s] failed: %s"
-                % (filepath, modulename, traceback.format_exc()))
-            return
-        timeout = time.time() + 1 # delay 1 sec to run slp
+            self._log.logError("Pyslpm", "load module[%s:%s] failed: %s"
+                % (modulename, filepath, traceback.format_exc()))
+            return "Load module[" + modulename + ":" + filepath + "] failed"
+        slp.name = modulename
+        slp.filepath = filepath
         self._slps[modulename] = slp
-        self._slps[modulename] = timeout
-        if self.ev.timeout() > timeout:
-            self.ev.add_timer(timeout, self.runslp)
+        return "Load module [" + modulename + ":" + filepath + "] ok"
 
-    def unloadslp(self, modulename):
-        if self._slps.has_key(modulename):
-            del self._slps[modulename]
-    
-    def updateslp(self, modulename, filepath):
-        self.unloadslp(modulename)
-        self.loadslp(modulename, filepath)
-
-    def runslp(self, ev):
-        to = 0
-        while 1:
-            nowtime = time.time()
-            count = 0
-            for name, slp in self._slps.iteritems():
-                if self._timeout[name] < nowtime:
-                    ret, timeout = slp.runslp()
-                    if to == 0:
-                        to = timeout
-                    elif to < timeout:
-                        to = timeout
-                    count += 1
-                    if ret == -1:
-                        self._timeout[name] = timeout
-                    else:
-                        self._timeout[name] = nowtime
-            if count == 0:
-                break
-        if to == 0:
-            tolist = self._timeout.itervalues()
-            tolist.sort()
-            self.ev.add_timer(tolist[0], self.runslp)
+    def unload(self, modulename):
+        if modulename in self._slps:
+            self._stopslp(modulename)
+            return "Unload module[" + modulename + "] ok"
         else:
-            self.ev.add_timer(to, self.runslp)
+            return "Unknown module[" + modulename + "] for unloading"
 
-if __name__ == "__main__":
-    from pysys.pylog import pylog
-    log = pylog("/Users/wujie/Work/Github/pyed/log/test.log")
-    slpm = pyslpm(log)
-    slpm.loadslp("test", "/Users/wujie/Work/Github/pyed/test/init.py")
+    def update(self, modulename, filepath=None):
+        if modulename not in self._slps:
+            return "Unknown module[" + modulename + "] for updating"
+        if filepath == None:
+            filepath = self._slps[modulename].filepath
+
+        m = self._loader.load(modulename, filepath)
+        if m == None:
+            self._log.logError("Pyslpm", "Compile module[%s:%s] failed: %s"
+                % (modulename, filepath, traceback.format_exc()))
+            return "Compile module[" + modulename + ", " + filepath + "] failed"
+        try: # load module in slp
+            slp = pyslp(self._log, self._loader, m)
+        except:
+            self._log.logError("Pyslpm", "update module[%s:%s] failed: %s"
+                % (modulename, filepath, traceback.format_exc()))
+            return "update module[" + modulename + ":" + filepath + "] failed"
+        slp.name = modulename
+        slp.filepath = filepath
+        self._stopslp(modulename)
+        self._slps[modulename] = slp
+
+        return "update module[" + modulename + ":" + filepath + "] ok"
+
+    def display(self, modulename=None):
+        if modulename and modulename in self._slps:
+            return modulename + "\t" + self._slps[modulename].filepath
+        elif not modulename:
+            ret = ""
+            for k, v in self._slps.iteritems():
+                ret += (k + "\t" + v.filepath + "\n")
+            return ret
+        return "Unknown module[" + modulename + "]"
+
+    def delete(self, modulename):
+        if modulename not in self._slps:
+            return "Unknown module[" + modulename + "] for deleting"
+        self._stopslp(modulename)
+        return "delete module[" + modulename + "] ok"
+
+    def runslp(self):
+        self._checkstop()
+
+        for slp in self._slps.itervalues():
+            slp.run()
+
+        nexttime = time.time() + 0.05 #TODO
+        for slp in self._slps.itervalues():
+            ntslp = slp.getnexttime()
+            if ntslp < nexttime:
+                nexttime = ntslp
+
+        return nexttime

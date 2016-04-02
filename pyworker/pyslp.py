@@ -1,44 +1,79 @@
 import traceback, time
+from corouting import coroutine
 
 
 class pyslp(object):
     def __init__(self, log, loader, m):
+        self.stop = False
         self._slps = {}
         self._enter = []
-        self._steps = []
+        self._chains = []
+        self._idx = 0
         self._loader = loader
-        self.loadmodule(m)
+        self._log = log
+        self._nexttime = time.time()
+        self._loadmodule(m)
 
-    def loadmodule(self, m):
+    def _loadmodule(self, m):
         for name, item in m.modulelist.iteritems():
             path = item[0]
-            func = item[1]
+            funcname = item[1]
             isEnter = item[2]
             script = self._loader.load(name, path)
-            self._slps[name] = getattr(script, func)
+            func = getattr(script, funcname)
+            self._slps[name] = coroutine(self._log, func, self)
             if isEnter:
                 self._enter.append(name)
-
         m.init(self)
-        self._steps = self._enter
 
-    def runslp(self):
-        while 1:
-            try:
-                func = self._slps[self._steps[0]]
-                code, param = func(self)
-                if code == -1:
-                    self._steps = self._enter
-                    return -1, time.time() + param / 1000
+    '''
+    func return (state, timeinterval, nextlist)
+        state:
+            -2: slp stop, it will delete from slpm
+            -1: will exe from curr nexttime
+             0: will exe from init nexttime
+             1: will exe nextlist nexttime
+        timeinterval:
+            time(s) interval to exe next func, 0 for run right now
+        nextlist:
+            next func module name list like ("splittask1", "splittask2")
+    '''
+    def run(self):
+        try:
+            nexttime = 0
+            if self._idx == 0:
+                self._chains = self._enter[:]
+            while self._idx < len(self._chains):
+                name = self._chains[self._idx]
+                code, interval, nextlist = self._slps[name].wait()
+                print code, interval, nextlist
+                nt = time.time() + interval
+                if nexttime == 0 or nexttime > nt:
+                    nexttime = nt
+                if code == -2:
+                    self.stop = True
+                    self._nexttime = nexttime
+                    return
+                elif code == -1:
+                    self._nexttime = nexttime
+                    return
                 elif code == 0:
-                    self._steps = self._enter
-                    return 0, 0
-                elif code > 0:
-                    for p in param:
-                        self._steps.append(p)
-            except:
-                self.log.logError("Pyslp", "Run SLP Error: %s" % traceback.format_exc())
-                return 0, 0
+                    self._idx = 0
+                    self._nexttime = nexttime
+                    return
+                else:
+                    for n in nextlist:
+                        self._chains.append(n)
+                    self._idx += 1
+            self._idx = 0
+            self._nexttime = nexttime
+        except:
+            self._log.logError("Pyslp", "Run SLP Error: %s" % traceback.format_exc())
+            self._idx = 0
+            self._nexttime = time.time()
+
+    def getnexttime(self):
+        return self._nexttime
 
     def lsslp(self):
         retstr = ""

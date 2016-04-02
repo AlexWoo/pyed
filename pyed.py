@@ -69,6 +69,7 @@ def manager_process(pesys, args):
         sys.exit(0)
 
 def worker_process(pesys, i, pchanel, cchanel):
+    pesys.log.logNotice("Worker", "Pyed worker process(%d) starting ...", i)
     pesys.initsys("worker")
 
     pchanel.close()

@@ -74,8 +74,6 @@ class pyproc(object):
         p.chanel = parent_conn
         p.hbcount = 0
         self._procs[p.pid] = p
-        for key in self._procs.iterkeys():
-            print key
         return p.pid
 
     def respawn(self, pid):
@@ -157,9 +155,6 @@ class pyproc(object):
 
         if buf == None:
             self.cmdcount -= 1
-        elif len(buf) == 0: # child close chanel, do nothing now TODO
-            print "child close chanel"
-            ev.del_read()
         else:
             self.cmdcount -= 1
             if self.cmdcount:
