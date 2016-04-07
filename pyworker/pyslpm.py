@@ -4,11 +4,12 @@ from pyslp import pyslp
 
 
 class pyslpm(object):
-    def __init__(self, log, evs, tms, cmd):
+    def __init__(self, log, evs, tms, slpschedman, cmd):
         self._slps = {}
         self._stop = []
         self._log = log
         self._loader = pyloader(log)
+        self._schedman = slpschedman
         slpmcmd = {
             "load": self.load,
             "unload": self.unload,
@@ -27,20 +28,25 @@ class pyslpm(object):
     def _checkstop(self):
         self._stop = [slp for slp in self._stop if not slp.exited]
 
-    def load(self, modulename, filepath):
+    def load(self, modulename, filepath, schedtype, parallelcount):
+        sched = self._schedman.create(schedtype)
+        if sched == None:
+            return "Unknown schedtype: " + schedtype
         m = self._loader.load(modulename, filepath)
         if m == None:
             self._log.logError("Pyslpm", "Compile module[%s:%s] failed: %s"
                 % (modulename, filepath, traceback.format_exc()))
             return "Compile module[" + modulename + ", " + filepath + "] failed"
         try: # load module in slp
-            slp = pyslp(self._log, self._loader, m)
+            slp = pyslp(self._log, self._loader, m, sched, parallelcount)
         except:
             self._log.logError("Pyslpm", "load module[%s:%s] failed: %s"
                 % (modulename, filepath, traceback.format_exc()))
             return "Load module[" + modulename + ":" + filepath + "] failed"
         slp.name = modulename
         slp.filepath = filepath
+        slp.schedtype = schedtype
+        slp.parallelcount = parallelcount
         self._slps[modulename] = slp
         return "Load module [" + modulename + ":" + filepath + "] ok"
 
@@ -51,13 +57,21 @@ class pyslpm(object):
         else:
             return "Unknown module[" + modulename + "] for unloading"
 
-    def update(self, modulename, filepath=None):
+    def update(self, modulename, filepath=None, schedtype=None, parallelcount=None):
         if modulename not in self._slps:
             return "Unknown module[" + modulename + "] for updating"
         if filepath == None:
             filepath = self._slps[modulename].filepath
+        if schedtype == None:
+            schedtype = self._slps[modulename].schedtype
+        if parallelcount == None:
+            parallelcount = self._slps[modulename].parallelcount
 
-        m = self._loader.load(modulename, filepath)
+        sched = self._schedman.create(schedtype)
+        if sched == None:
+            return "Unknown schedtype: " + schedtype
+
+        m = self._loader.load(modulename, filepath, sched, parallelcount)
         if m == None:
             self._log.logError("Pyslpm", "Compile module[%s:%s] failed: %s"
                 % (modulename, filepath, traceback.format_exc()))
@@ -77,11 +91,14 @@ class pyslpm(object):
 
     def display(self, modulename=None):
         if modulename and modulename in self._slps:
-            return modulename + "\t" + self._slps[modulename].filepath
+            return (modulename + "\t" + self._slps[modulename].filepath
+                                      + "\t" + self._slps[modulename].schedtype
+                                      + "\t" + self._slps[modulename].parallelcount)
         elif not modulename:
             ret = ""
             for k, v in self._slps.iteritems():
-                ret += (k + "\t" + v.filepath + "\n")
+                ret += (k + "\t" + v.filepath + "\t" + v.schedtype
+                        + "\t" + v.parallelcount + "\n")
             return ret
         return "Unknown module[" + modulename + "]"
 

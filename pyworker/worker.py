@@ -2,6 +2,7 @@ import sys, traceback, time
 
 from pyslpm import pyslpm
 from workercmd import workercmd
+from slpscheduler import slpschedmanager
 
 
 class worker(object):
@@ -9,6 +10,7 @@ class worker(object):
         self._evs = pesys.evs
         self._tms = pesys.tms
         self._log = pesys.log
+        self._schedman = slpschedmanager(pesys)
         self._idx = i
 
         cmd = {
@@ -20,7 +22,7 @@ class worker(object):
         self._cmd.registercmd(cmd)
 
         self._exiting = False
-        self._slpm = pyslpm(self._log, self._evs, self._tms, self._cmd)
+        self._slpm = pyslpm(self._log, self._evs, self._tms, self._schedman, self._cmd)
 
     def mainloop(self):
         while 1:

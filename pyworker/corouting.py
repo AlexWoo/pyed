@@ -1,9 +1,13 @@
+import traceback
+
+
 class coroutine(object):
     def __init__(self, log, func, *args):
         self.log = log
         self._state = "init"
         try:
             self._gen = func(*args)
+            print self._gen
         except:
             self._state = "stop"
             raise
@@ -17,7 +21,7 @@ class coroutine(object):
         except StopIteration:
             self._state = "stop"
         except:
-            raise
+            self.log.logError("Corouting", "%s", traceback.format_exc())
         return res
 
     def kill(self):

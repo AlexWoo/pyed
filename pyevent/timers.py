@@ -4,7 +4,7 @@ from time import time
 class timers(object):
     def __init__(self):
         self._timers = []
-        self._timeinterval = 1000
+        self._timeinterval = 50
 
     def addtimer(self, ev, timeout):   
         if len(self._timers) == 0:
