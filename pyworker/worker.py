@@ -1,4 +1,4 @@
-import sys, traceback, time
+import sys, traceback
 
 from pyslpm import pyslpm
 from workercmd import workercmd
@@ -27,27 +27,25 @@ class worker(object):
     def mainloop(self):
         while 1:
             try:
-                nexttime = self._slpm.runslp()
+                self._slpm.runslp()
                 t = self._tms.processtimer()
-                interval = (nexttime - time.time()) * 1000
-                if interval < 0: interval = 0
-                self._evs.processevent(min(t, interval))
+                self._evs.processevent(t)
             except SystemExit:
                 return
             except:
                 self._log.logInfo("Worker", "error occured when event process: %s",
                                   traceback.format_exc())
-    
+
     def quit(self):
         if not self._exiting:
             self._log.logNotice("Worker", "worker process(%d) quit", self._idx)
             self._exiting = True
             sys.exit(0)
-    
+
     def reopen(self):
         self._log.logNotice("Worker", "worker process(%d) reopen log", self._idx)
         self._log.reopen()
-    
+
     def reload(self):
         self._log.logNotice("Worker", "worker process(%d) reload conf", self._idx)
         # Do nothing now

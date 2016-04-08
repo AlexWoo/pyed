@@ -1,5 +1,5 @@
 from select import select
-import os
+
 
 class events_select(object):
     EVENT_READ = 1

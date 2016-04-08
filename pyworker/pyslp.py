@@ -1,14 +1,12 @@
-import traceback
+import traceback, time
 
 
 class pyslp(object):
-    def __init__(self, log, loader, m, scheduler, parallelcount):
+    def __init__(self, log, loader, m, scheduler):
         self.stop = False
         self.log = log
 
         self._scheduler = scheduler
-        self._maxcount = parallelcount
-        self._count = 0;
         self._enter = m.process
 
     def run(self):
@@ -19,8 +17,9 @@ class pyslp(object):
         if not trigger: return
         else:
             try:
-                self._count += 1
-                retargs = self._enter(args)
+                ret, wait, srvlist = self._enter(self, args)
+                nexttime = time.time() + float(wait)/1000
+                self._scheduler.endslp(ret, nexttime, srvlist)
             except:
                 self.log.logError("Pyslp", "Run SLP Error: %s" % traceback.format_exc())
-                self._count -= 1
+                self._scheduler.endslp(ret, time.time(), None)
