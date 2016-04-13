@@ -17,7 +17,7 @@ class pyslp(object):
         if not trigger: return
         else:
             try:
-                ret, wait, srvlist = self._enter(self, args)
+                ret, wait, srvlist = self._enter(self, *args)
                 nexttime = time.time() + float(wait)/1000
                 self._scheduler.endslp(ret, nexttime, srvlist)
             except:
