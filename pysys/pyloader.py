@@ -9,6 +9,7 @@ class pyloader(object):
         try:
             m = types.ModuleType(name)
             exec open(path).read() in m.__dict__
+            m.__file__ = path
             return m
 
         except:

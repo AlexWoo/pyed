@@ -50,13 +50,15 @@ class slpschedmanager(object):
     def __init__(self, pesys):
         self._log = pesys.log
         self._loader = pesys.loader
-        self._conf = {}
+        self._conf = {
+            "timesched": timesched
+        }
         self.data = scheddata()
 
     def register(self, schedtype, scheclass):
         self._conf[schedtype] = scheclass
 
-    def create(self, srvname, schedtype):
+    def create(self, srvname, schedtype=None):
         if schedtype in self._conf:
             return self._conf[schedtype](self, srvname)
         else:
