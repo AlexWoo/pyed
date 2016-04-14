@@ -29,7 +29,7 @@ class pyslpm(object):
         self._stop = [slp for slp in self._stop if not slp.exited]
 
     def load(self, modulename, filepath, schedtype):
-        sched = self._schedman.create(schedtype)
+        sched = self._schedman.create(modulename, schedtype)
         if sched == None:
             return "Unknown schedtype: " + schedtype
         m = self._loader.load(modulename, filepath)
@@ -64,7 +64,7 @@ class pyslpm(object):
         if schedtype == None:
             schedtype = self._slps[modulename].schedtype
 
-        sched = self._schedman.create(schedtype)
+        sched = self._schedman.create(modulename, schedtype)
         if sched == None:
             return "Unknown schedtype: " + schedtype
 
