@@ -54,4 +54,4 @@ class pyslp(object):
                 self._scheduler.endslp(ret, nexttime, srvlist)
             except:
                 self.log.logError("Pyslp", "Run SLP Error: %s" % traceback.format_exc())
-                self._scheduler.endslp(-1, time.time(), None)
+                self._scheduler.endslp(-1, 0, None)

@@ -34,7 +34,7 @@ class scheddata(object):
     processing is list of data to process now
     if processing number is less than maxcount, getdata will new new a nexttime if begintime is not 0
     """
-    def __init__(self):
+    def __init__(self, cmd):
         self._srv = {}
 
     def initdata(self, srvname, begintime=0, interval=1, maxcount=1):
@@ -83,7 +83,7 @@ class scheddata(object):
 
     def setdata(self, srvname, nexttime, srvlist):
         if srvname not in self._srv:
-            self._srv[srvname] = {}
+            return
         if nexttime not in self._srv[srvname]["processing"]:
             self._srv[srvname]["processing"][nexttime] = []
             self._srv[srvname]["processing"][nexttime].extend([srvlist, False])
@@ -94,6 +94,10 @@ class scheddata(object):
     def releasedata(self, srvname, nexttime):
         if srvname in self._srv and nexttime in self._srv[srvname]["processing"]:
             self._srv[srvname]["processing"][nexttime][1] = False
+
+    def deletedata(self, srvname, nexttime):
+        if srvname in self._srv and nexttime in self._srv[srvname]["processing"]:
+            del self._srv[srvname]["processing"][nexttime]
 
     def getdata(self, srvname):
         if srvname not in self._srv:
@@ -114,7 +118,7 @@ class scheddata(object):
         return None, None
 
 if __name__ == "__main__":
-    sd = scheddata()
+    sd = scheddata(None)
     sd.initdata("slp1", time.time()-600, 5, 4)
     sd.initdata("slp2")
     sd.initdata("slp3", maxcount=10)
@@ -131,6 +135,8 @@ if __name__ == "__main__":
     sd.releasedata("slp1", nt)
     nt, srvlist = sd.getdata("slp1")
     print nt, srvlist
+    print "delete", nt
+    sd.deletedata("slp1", nt)
     nt, srvlist = sd.getdata("slp1")
     print nt, srvlist
     nt, srvlist = sd.getdata("slp1")
