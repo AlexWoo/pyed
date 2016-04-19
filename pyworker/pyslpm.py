@@ -12,7 +12,6 @@ class pyslpm(object):
         self._schedman = slpschedman
         slpmcmd = {
             "load": self.load,
-            "unload": self.unload,
             "update": self.update,
             "display": self.display,
             "delete": self.delete
@@ -26,7 +25,7 @@ class pyslpm(object):
         self._stop.append(slp)
 
     def _checkstop(self):
-        self._stop = [slp for slp in self._stop if not slp.exited]
+        self._stop = [slp for slp in self._stop if not slp.stop]
 
     def load(self, modulename, filepath, schedtype):
         sched = self._schedman.create(modulename, schedtype)
@@ -49,13 +48,6 @@ class pyslpm(object):
         self._slps[modulename] = slp
         return "Load module [" + modulename + ":" + filepath + "] ok"
 
-    def unload(self, modulename):
-        if modulename in self._slps:
-            self._stopslp(modulename)
-            return "Unload module[" + modulename + "] ok"
-        else:
-            return "Unknown module[" + modulename + "] for unloading"
-
     def update(self, modulename, filepath=None, schedtype=None):
         if modulename not in self._slps:
             return "Unknown module[" + modulename + "] for updating"
@@ -68,13 +60,13 @@ class pyslpm(object):
         if sched == None:
             return "Unknown schedtype: " + schedtype
 
-        m = self._loader.load(modulename, filepath, sched)
+        m = self._loader.load(modulename, filepath)
         if m == None:
             self._log.logError("Pyslpm", "Compile module[%s:%s] failed: %s"
                 % (modulename, filepath, traceback.format_exc()))
             return "Compile module[" + modulename + ", " + filepath + "] failed"
         try: # load module in slp
-            slp = pyslp(self._log, self._loader, m)
+            slp = pyslp(self._log, self._loader, m, sched)
         except:
             self._log.logError("Pyslpm", "update module[%s:%s] failed: %s"
                 % (modulename, filepath, traceback.format_exc()))

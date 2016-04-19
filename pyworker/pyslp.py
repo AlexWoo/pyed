@@ -8,7 +8,7 @@ class pyslp(object):
         para1: need to process slp
         para2: paralist(tuple)
 
-    m.process(paralist)
+    m.process(slp, paralist)
         return value:
             para1: 0 process over, -1 process incomplete
             para2: next process interval (measured with millisecond)

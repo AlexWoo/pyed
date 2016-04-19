@@ -26,8 +26,8 @@ class workercmd(object):
         if args[0] in self._cmd:
             try:
                 ret = self._cmd[args[0]](*args[1:])
-            except TypeError:
-                ev.sock.send("Number of arguments mismatched")
+            #except TypeError:
+            #    ev.sock.send("Number of arguments mismatched")
             except:
                 self._log.logInfo("Worker", "error occur when execute cmd[%s], %s",
                                    args[0], traceback.format_exc())
