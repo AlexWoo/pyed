@@ -21,7 +21,7 @@ class worker(object):
         self._cmd.registercmd(cmd)
 
         self._exiting = False
-        self._schedman = slpschedmanager(self._log, self._cmd)
+        self._schedman = slpschedmanager(self._log, pesys.loader, self._cmd)
         self._slpm = pyslpm(self._log, self._evs, self._tms, self._schedman, self._cmd)
 
     def mainloop(self):

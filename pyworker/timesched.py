@@ -1,8 +1,7 @@
 import time
-from slpscheduler import slpscheduler
+from pyworker.slpscheduler import slpscheduler
 
-
-def register_timesched(slpsm):
+def register(slpsm):
     slpsm.register("timesched", timesched)
 
 
@@ -48,7 +47,7 @@ if __name__ == "__main__":
     slpsm = slpschedmanager(log, {}) # for this test, slpschedmanager and scheddata must not register cmd
 
     print slpsm._conf
-    register_timesched(slpsm)
+    register(slpsm)
     print slpsm._conf
 
     slp1 = slpsm.create("slp1", "timesched", time.time()-600, 5, 4)
