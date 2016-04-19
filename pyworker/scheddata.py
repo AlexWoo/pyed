@@ -36,6 +36,11 @@ class scheddata(object):
     """
     def __init__(self, cmd):
         self._srv = {}
+        sdmcmd = {
+            "initdata": self.initdata,
+            "displaydata": self.displaydata
+        }
+        cmd.registercmd(sdmcmd)
 
     def initdata(self, srvname, begintime=0, interval=1, maxcount=1):
         if srvname in self._srv:
@@ -50,9 +55,8 @@ class scheddata(object):
             self._srv[srvname]["begintime"] = begintime
             self._srv[srvname]["interval"] = 0
         else:
-            interval *= 60
-            begintime = int(begintime) - int(begintime) % interval
-            self._srv[srvname]["begintime"] = begintime
+            interval = int(interval) * 60
+            self._srv[srvname]["begintime"] = int(begintime) - int(begintime) % interval
             self._srv[srvname]["interval"] = interval
         self._srv[srvname]["maxcount"] = maxcount
         self._srv[srvname]["processing"] = {}
